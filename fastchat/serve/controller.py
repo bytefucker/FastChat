@@ -263,7 +263,7 @@ class Controller:
                 json=params,
                 timeout=WORKER_API_TIMEOUT,
             )
-            yield response.content
+            yield response.json()
         except requests.exceptions.RequestException as e:
             yield self.handle_worker_timeout(worker_addr)
 
@@ -319,13 +319,12 @@ async def worker_api_get_status(request: Request):
 @app.post("/worker_generate")
 async def api_generate(request: Request):
     params = await request.json()
-    output = controller.worker_api_generate(params)
-    return JSONResponse(output)
+    return controller.worker_api_generate(params)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--host", type=str, default="localhost")
+    parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=21001)
     parser.add_argument(
         "--dispatch-method",
