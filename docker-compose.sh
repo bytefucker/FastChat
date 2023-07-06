@@ -3,4 +3,4 @@
 
 set -e
 
-docker compose -f docker/docker-compose.yml $@
+docker compose -p fastchat -f docker/docker-compose.yml $@
