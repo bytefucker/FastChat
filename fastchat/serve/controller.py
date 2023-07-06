@@ -12,8 +12,8 @@ import time
 from typing import List, Union
 import threading
 
-from fastapi import FastAPI, Request, JSONResponse
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse, JSONResponse
 import numpy as np
 import requests
 import uvicorn
