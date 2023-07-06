@@ -12,7 +12,7 @@ import time
 from typing import List, Union
 import threading
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, JSONResponse
 from fastapi.responses import StreamingResponse
 import numpy as np
 import requests
@@ -253,6 +253,20 @@ class Controller:
         except requests.exceptions.RequestException as e:
             yield self.handle_worker_timeout(worker_addr)
 
+    def worker_api_generate(self, params):
+        worker_addr = self.get_worker_address(params["model"])
+        if not worker_addr:
+            yield self.handle_no_worker(params)
+        try:
+            response = requests.post(
+                worker_addr + "/worker_generate",
+                json=params,
+                timeout=WORKER_API_TIMEOUT,
+            )
+            yield response.content
+        except requests.exceptions.RequestException as e:
+            yield self.handle_worker_timeout(worker_addr)
+
 
 app = FastAPI()
 
@@ -300,6 +314,13 @@ async def worker_api_generate_stream(request: Request):
 @app.post("/worker_get_status")
 async def worker_api_get_status(request: Request):
     return controller.worker_api_get_status()
+
+
+@app.post("/worker_generate")
+async def api_generate(request: Request):
+    params = await request.json()
+    output = controller.worker_api_generate(params)
+    return JSONResponse(output)
 
 
 if __name__ == "__main__":

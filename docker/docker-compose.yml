@@ -1,40 +1,79 @@
-version: "3.9"
+version: "3.8"
 
 services:
+
   fastchat-controller:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: fastchat:latest
+    environment:
+      TZ: Asia/Shanghai
     ports:
       - "21001:21001"
-    entrypoint: ["python3.9", "-m", "fastchat.serve.controller", "--host", "0.0.0.0", "--port", "21001"]
+    entrypoint:
+      [
+        "python3.9",
+        "-m",
+        "fastchat.serve.controller",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "21001"
+      ]
+
   fastchat-model-worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - huggingface:/root/.cache/huggingface
-    environment:
-      FASTCHAT_CONTROLLER_URL: http://fastchat-controller:21001
     image: fastchat:latest
+    environment:
+      TZ: Asia/Shanghai
+      FASTCHAT_CONTROLLER_URL: http://fastchat-controller:21001
+    volumes:
+      - /mnt/data/models:/mnt/data/models
     deploy:
       resources:
         reservations:
           devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    entrypoint: ["python3.9", "-m", "fastchat.serve.model_worker", "--model-name", 'vicuna-7b-v1.3', "--model-path", "lmsys/vicuna-7b-v1.3", "--worker-address", "http://fastchat-model-worker:21002", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "21002"]
-  fastchat-api-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      FASTCHAT_CONTROLLER_URL: http://fastchat-controller:21001
-    image: fastchat:latest
+            - driver: "nvidia"
+              device_ids: [ '2' ]
+              capabilities: [ "gpu" ]
+    entrypoint:
+      [
+        "python3.9",
+        "-m",
+        "fastchat.serve.model_worker",
+        "--model-path",
+        "/mnt/data/models/chatglm2-6b",
+        "--worker-address",
+        "http://fastchat-model-worker:21002",
+        "--controller-address",
+        "http://fastchat-controller:21001",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "21002"
+      ]
     ports:
-      - "8000:8000"
-    entrypoint: ["python3.9", "-m", "fastchat.serve.openai_api_server", "--controller-address", "http://fastchat-controller:21001", "--host", "0.0.0.0", "--port", "8000"]
-volumes:
-  huggingface:
+      - "21002:21002"
+    depends_on:
+      - fastchat-controller
+
+  fastchat-webui:
+    image: fastchat:latest
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "21000:21000"
+    entrypoint:
+      [
+        "python3.9",
+        "-m",
+        "fastchat.serve.gradio_web_server",
+        "--port",
+        "21000",
+        "--controller-url",
+        "http://fastchat-controller:21001"
+      ]
+    depends_on:
+      - fastchat-controller
+      - fastchat-model-worker
+
+networks:
+  default:
+    name: fast-chat
