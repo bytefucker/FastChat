@@ -41,9 +41,9 @@ services:
         "--model-path",
         "/mnt/data/models/chatglm2-6b",
         "--worker-address",
-        "http://fastchat-model-worker:21002",
+        "http://10.56.24.62:21002",
         "--controller-address",
-        "http://fastchat-controller:21001",
+        "http://10.56.24.62:21001",
         "--host",
         "0.0.0.0",
         "--port",
@@ -73,6 +73,25 @@ services:
     depends_on:
       - fastchat-controller
       - fastchat-model-worker
+
+  fastchat-api-server:
+    environment:
+      FASTCHAT_CONTROLLER_URL: http://fastchat-controller:21001
+    image: fastchat:latest
+    ports:
+      - "21003:21003"
+    entrypoint:
+      [
+        "python3.9",
+        "-m",
+        "fastchat.serve.openai_api_server",
+        "--controller-address",
+        "http://fastchat-controller:21001",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "21003"
+      ]
 
 networks:
   default:
