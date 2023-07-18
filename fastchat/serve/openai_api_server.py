@@ -775,7 +775,7 @@ if __name__ == "__main__":
         description="FastChat ChatGPT-Compatible RESTful API server."
     )
     parser.add_argument("--host", type=str, default="localhost", help="host name")
-    parser.add_argument("--port", type=int, default=8000, help="port number")
+    parser.add_argument("--port", type=int, default=8102, help="port number")
     parser.add_argument(
         "--controller-address", type=str, default="http://localhost:21001"
     )
